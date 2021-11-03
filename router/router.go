@@ -41,6 +41,8 @@ func NewRouter() *gin.Engine {
 		reportTemplate.GET("/template",atLeastLoginMiddleware, reportTemplateController.GetReportTemplateList)
 		reportTemplate.PUT("/template",atLeastLoginMiddleware, reportTemplateController.UpdateReportTemplate)
 		reportTemplate.GET("/template/:template_id",atLeastLoginMiddleware, reportTemplateController.GetReportTemplate)
+		reportTemplate.DELETE("/template/:template_id",atLeastLoginMiddleware, reportTemplateController.DeleteReportTemplate)
+		reportTemplate.PUT("/template/:template_id/:status",atLeastLoginMiddleware, reportTemplateController.UpdateReportTemplateStatus)
 	}
 	return r
 }

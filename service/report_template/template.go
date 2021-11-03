@@ -159,3 +159,66 @@ func (p *UpdateReportTemplateParams) UpdateReportTemplate(users *util.UserCookie
 		ResCode: serializer.REPORT_TEMPLATE_UPDATE_SUCCESS,
 	}
 }
+
+func DeleteReportTemplate(users *util.UserCookie, templateId string) serializer.SsopaResponse {
+	var reportTemplateModel report_template.ReportTemplate
+	err := conf.Orm.Where("template_id = ?", templateId).Delete(&reportTemplateModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_MODULE, "delete", users.Name, users.Email, "delete report template specified error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "删除运营模板失败！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_DELETE_ERROR,
+		}
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_MODULE, "delete", users.Name, users.Email, "delete report template success!", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: nil,
+			Msg:  "删除运营模板成功！",
+		},
+		ResCode: serializer.REPORT_TEMPLATE_DELETE_SUCCESS,
+	}
+}
+
+func UpdateReportTemplateStatus(users *util.UserCookie, templateId string, status string) serializer.SsopaResponse {
+	var reportTemplateModel report_template.ReportTemplate
+	err := conf.Orm.Where("template_id = ?", templateId).Find(&reportTemplateModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_MODULE, "get", users.Name, users.Email, "get report template specified error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "获取运营模板失败！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_GET_ERROR,
+		}
+	}
+	reportTemplateModel.Status = status
+	err = conf.Orm.Save(&reportTemplateModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_MODULE, "update", users.Name, users.Email, "update report template error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "更新运营模板失败！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_UPDATE_ERROR,
+		}
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_MODULE, "update", users.Name, users.Email, "update report template success!", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: nil,
+			Msg:  "更新运营模板成功！",
+		},
+		ResCode: serializer.REPORT_TEMPLATE_UPDATE_SUCCESS,
+	}
+}

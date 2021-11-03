@@ -88,3 +88,34 @@ func UpdateReportTemplate(c *gin.Context) {
 		ResCode: result.ResCode,
 	})
 }
+
+// 删除指定运营模板
+func DeleteReportTemplate(c *gin.Context) {
+	users, _ := util.GetUserCookie(c)
+	templateId := c.Param("template_id")
+	result := report_template.DeleteReportTemplate(users,templateId)
+	c.JSON(result.Code, serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: result.Code,
+			Data: result.Data,
+			Msg:  result.Msg,
+		},
+		ResCode: result.ResCode,
+	})
+}
+
+// 更新指定运营模板状态
+func UpdateReportTemplateStatus(c *gin.Context) {
+	users, _ := util.GetUserCookie(c)
+	templateId := c.Param("template_id")
+	status := c.Param("status")
+	result := report_template.UpdateReportTemplateStatus(users,templateId,status)
+	c.JSON(result.Code, serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: result.Code,
+			Data: result.Data,
+			Msg:  result.Msg,
+		},
+		ResCode: result.ResCode,
+	})
+}
