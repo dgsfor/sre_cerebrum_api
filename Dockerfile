@@ -10,4 +10,4 @@ RUN chmod +x ssopa-api
 # api
 EXPOSE 8080
 
-CMD ["./ssopa-api", "--env", "prod"]
+CMD ["./ssopa-api", "--env", "release"]
