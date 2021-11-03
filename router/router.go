@@ -4,7 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"io/ioutil"
-	oauth_controller "ssopa/controller/oauth"
+	oauthController "ssopa/controller/oauth"
+	reportTemplateController "ssopa/controller/report_template"
 	"ssopa/middleware"
 	"time"
 )
@@ -29,11 +30,17 @@ func NewRouter() *gin.Engine {
 	{
 		// user
 		ur := v1.Group("/oauth")
-		ur.POST("/login", oauth_controller.Login)
-		ur.POST("/register",oauth_controller.Register)
-		ur.GET("/logout", oauth_controller.Logout)
-		ur.GET("/userinfo",atLeastLoginMiddleware,oauth_controller.GetUserInfo)
-		ur.GET("/check_login", atLeastLoginMiddleware, oauth_controller.CheckLogin)
+		ur.POST("/login", oauthController.Login)
+		ur.POST("/register", oauthController.Register)
+		ur.GET("/logout", oauthController.Logout)
+		ur.GET("/userinfo",atLeastLoginMiddleware, oauthController.GetUserInfo)
+		ur.GET("/check_login", atLeastLoginMiddleware, oauthController.CheckLogin)
+		// report template
+		reportTemplate := v1.Group("/report_template")
+		reportTemplate.POST("/template",atLeastLoginMiddleware, reportTemplateController.CreateReportTemplate)
+		reportTemplate.GET("/template",atLeastLoginMiddleware, reportTemplateController.GetReportTemplateList)
+		reportTemplate.PUT("/template",atLeastLoginMiddleware, reportTemplateController.UpdateReportTemplate)
+		reportTemplate.GET("/template/:template_id",atLeastLoginMiddleware, reportTemplateController.GetReportTemplate)
 	}
 	return r
 }

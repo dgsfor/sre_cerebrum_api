@@ -3,6 +3,7 @@ package oauth
 import (
 	"net/http"
 	"ssopa/conf"
+	"ssopa/middleware"
 	"ssopa/model/auth"
 	"ssopa/serializer"
 	"ssopa/util"
@@ -43,6 +44,7 @@ func (p *LoginParams) Login() serializer.SsopaResponse {
 			ResCode: serializer.PASSWORD_ERROR,
 		}
 	}
+	middleware.CustomOutPutLog(serializer.USER_MODULE, "login", p.UserName, "nil", "login success",nil)
 	return serializer.SsopaResponse{
 		Response: serializer.Response{
 			Code: http.StatusOK,
@@ -57,6 +59,7 @@ func (p *RegisterParams) Register() serializer.SsopaResponse {
 	var SsoPaUserModel auth.SsoPaUsers
 	err := conf.Orm.Where("user_name = ?", p.UserName).Find(&SsoPaUserModel).RowsAffected
 	if err >= 1 {
+		middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "user exist",nil)
 		return serializer.SsopaResponse{
 			Response: serializer.Response{
 				Code: http.StatusInternalServerError,
@@ -71,6 +74,7 @@ func (p *RegisterParams) Register() serializer.SsopaResponse {
 	SsoPaUserModel.Email = p.Email
 	createErr := conf.Orm.Create(&SsoPaUserModel).Error
 	if createErr != nil {
+		middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "register error",createErr.Error())
 		return serializer.SsopaResponse{
 			Response: serializer.Response{
 				Code: http.StatusInternalServerError,
@@ -80,6 +84,7 @@ func (p *RegisterParams) Register() serializer.SsopaResponse {
 			ResCode: serializer.CREATE_USER_ERROR,
 		}
 	}
+	middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "register success",nil)
 	return serializer.SsopaResponse{
 		Response: serializer.Response{
 			Code: http.StatusOK,

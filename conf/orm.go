@@ -7,7 +7,8 @@ import (
 	"gorm.io/gorm/logger"
 	"log"
 	"os"
-	auth_model "ssopa/model/auth"
+	authModel "ssopa/model/auth"
+	reportTemplateModel "ssopa/model/report_template"
 	"time"
 )
 
@@ -39,5 +40,6 @@ func SetupOrm()  {
 		log.Panicln(err)
 	}
 
-	_ = Orm.AutoMigrate(&auth_model.SsoPaUsers{})
+	_ = Orm.AutoMigrate(&authModel.SsoPaUsers{})
+	_ = Orm.AutoMigrate(&reportTemplateModel.ReportTemplate{})
 }
