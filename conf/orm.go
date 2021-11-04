@@ -42,4 +42,5 @@ func SetupOrm()  {
 
 	_ = Orm.AutoMigrate(&authModel.SsoPaUsers{})
 	_ = Orm.AutoMigrate(&reportTemplateModel.ReportTemplate{})
+	_ = Orm.AutoMigrate(&reportTemplateModel.ReportTemplateVar{})
 }
