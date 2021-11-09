@@ -1,13 +1,21 @@
 package report_template
 
 import (
+	"fmt"
+	"github.com/bitly/go-simplejson"
+	"math"
 	"net/http"
+	"net/url"
 	"ssopa/conf"
 	"ssopa/middleware"
 	"ssopa/model"
+	authorityMessage "ssopa/model/authority_message"
+	"ssopa/model/report"
 	reportTemplateModel "ssopa/model/report_template"
 	"ssopa/serializer"
 	"ssopa/util"
+	"strings"
+	"time"
 )
 
 type CreateReportTemplateVarParams struct {
@@ -99,7 +107,7 @@ func GetReportTemplateVarList(users *util.UserCookie) serializer.SsopaResponse {
 
 func DeleteReportTemplateVar(users *util.UserCookie, templateId string, varName string) serializer.SsopaResponse {
 	var reportTemplateVarModel reportTemplateModel.ReportTemplateVar
-	err := conf.Orm.Where("template_id = ? and var_name = ?", templateId,varName).Delete(&reportTemplateVarModel).Error
+	err := conf.Orm.Where("template_id = ? and var_name = ?", templateId, varName).Delete(&reportTemplateVarModel).Error
 	if err != nil {
 		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "delete", users.Name, users.Email, "delete report template var specified error!", err.Error())
 		return serializer.SsopaResponse{
@@ -120,4 +128,296 @@ func DeleteReportTemplateVar(users *util.UserCookie, templateId string, varName 
 		},
 		ResCode: serializer.REPORT_TEMPLATE_VAR_DELETE_SUCCESS,
 	}
+}
+
+// 批量创建变量渲染记录
+func GenerateVarRenderedRecord(resourceId string, varListString string) {
+	varList := strings.Split(varListString, ",")
+	for _, varName := range varList {
+		// 如果这里使用go来做，可能会造成有些变量还没有创建出来，然后就已经到了渲染步骤，最终渲染失败
+		GenerateVarRenderedRecordService(resourceId, varName)
+	}
+}
+func GenerateVarRenderedRecordService(resourceId string, varName string) {
+	varRenderRecordModel := &reportTemplateModel.VarRenderedRecord{
+		BaseModel:  model.BaseModel{},
+		ResourceId: resourceId,
+		VarName:    varName,
+	}
+	err := conf.Orm.Create(&varRenderRecordModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "create", "auto", "auto", "create var rendered record error!", resourceId+":"+err.Error())
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "create", "auto", "auto", "create var rendered record success!", resourceId+":"+varName)
+}
+
+/**
+渲染变量
+1.循环出变量
+2.批量获取到变量值，然后修改变量渲染记录中的VarResult字段
+3.这时候就可以实时获取渲染的进度
+4.所有的编辑动作、发送消息动作、预览报告动作都会预先检查渲染进度
+5.如果100%，那么就更新content
+6.如果不是100%，可以选择强制更新content
+*/
+func RenderedVar(renderId string, resourceType string, resourceId string, templateId string, varListString string) {
+	varList := strings.Split(varListString, ",")
+	for _, varName := range varList {
+		go RenderedVarService(renderId, resourceType, resourceId, templateId, varName)
+	}
+}
+func RenderedVarService(renderId string, resourceType string, resourceId string, templateId string, varName string) {
+	renderStartTime := time.Now()
+	var varRenderRecordModel reportTemplateModel.VarRenderedRecord
+	_ = conf.Orm.Where("resource_id = ? and var_name = ?", resourceId, varName).Find(&varRenderRecordModel).Error
+	var reportTemplateVarModel reportTemplateModel.ReportTemplateVar
+	row := conf.Orm.Where("template_id = ? and var_name = ?", templateId, varName).Find(&reportTemplateVarModel).RowsAffected
+	if row == 0 {
+		// 找不到变量注册，可能是内置变量
+		middleware.RenderOutPutLog(renderId, serializer.REPORT_TEMPLATE_VAR_MODULE, "render", "auto", "auto", "render var error,can't not found var register,maybe inner var!",
+			"resourceId: "+resourceId+",vaName: "+varName)
+		row = conf.Orm.Where("var_name = ?", varName).Find(&reportTemplateVarModel).RowsAffected
+		if row == 0 {
+			// 内置变量也没有，直接退出不进行渲染
+			middleware.RenderOutPutLog(renderId, serializer.REPORT_TEMPLATE_VAR_MODULE, "render", "auto", "auto", "render var error,can't not found var register,not inner var!",
+				"resourceId: "+resourceId+",vaName: "+varName)
+			varRenderRecordModel.RenderStatus = 3
+			_ = conf.Orm.Save(&varRenderRecordModel).Error
+			return
+		} else {
+			goto RenderFunc
+		}
+	}
+	// get var data and write VarRenderRecord
+	goto RenderFunc
+RenderFunc:
+	getStatus, dataResult := RenderVarServiceGetVarData(resourceId, resourceType, reportTemplateVarModel)
+	if getStatus {
+		middleware.RenderOutPutLog(renderId, serializer.REPORT_TEMPLATE_VAR_MODULE, "render", "auto", "auto", "render var , get var data success",
+			"resourceId: "+resourceId+",vaName: "+varName+",newData:"+dataResult)
+		if resourceType == serializer.REPORT_AUTHORITY_MESSAGE_MODULE {
+			varRenderRecordModel.RenderStatus = 1
+		}
+		if resourceType == serializer.REPORT_MODULE {
+			// 渲染完成之后，就修改渲染变量记录的状态,并保存渲染内容
+			varRenderRecordModel.RenderStatus = 1
+		}
+	} else {
+		middleware.RenderOutPutLog(renderId, serializer.REPORT_TEMPLATE_VAR_MODULE, "render", "auto", "auto", "render var , get var data failure",
+			"resourceId: "+resourceId+",vaName: "+varName+",error:"+dataResult)
+		varRenderRecordModel.RenderStatus = 2
+	}
+	varRenderRecordModel.VarResult = dataResult
+	varRenderRecordModel.RenderId = renderId
+	renderEndTime := time.Now()
+	renderTime := renderEndTime.Sub(renderStartTime)
+	varRenderRecordModel.RenderTime = renderTime.String()
+	err := conf.Orm.Save(&varRenderRecordModel).Error
+	if err != nil {
+		middleware.RenderOutPutLog(renderId, serializer.REPORT_TEMPLATE_VAR_MODULE, "render", "auto", "auto", "render var , save result to varRenderRecord failure",
+			"resourceId: "+resourceId+",vaName: "+varName+",error:"+err.Error())
+	}
+}
+func RenderVarServiceGetVarData(resourceId string, resourceType string, p reportTemplateModel.ReportTemplateVar) (bool, string) {
+	//inner_var、custom_var、img_var
+	// 增加header
+	headerMap := make(map[string]string)
+	headerMap["content-type"] = "application/json"
+	if p.VarHeader != "" {
+		varHeaderList := strings.Split(p.VarHeader, ",")
+		for _, singleHeader := range varHeaderList {
+			varHeaderKey := strings.Split(singleHeader, ":")[0]
+			varHeaderValue := strings.Split(singleHeader, ":")[1]
+			headerMap[varHeaderKey] = varHeaderValue
+		}
+	}
+	if p.VarType == "inner_var" || p.VarType == "custom_var" {
+		var requestUrl string
+		if resourceType == serializer.REPORT_AUTHORITY_MESSAGE_MODULE {
+			requestUrl = fmt.Sprintf("%s", p.VarUrl)
+		}
+		if resourceType == serializer.REPORT_MODULE {
+			var reportModel report.Report
+			_ = conf.Orm.Where("report_id = ?", resourceId).Find(&reportModel).Error
+			requestUrl = fmt.Sprintf("%s?start_time=%s&end_time=%s", p.VarUrl, url.QueryEscape(reportModel.StartTime), url.QueryEscape(reportModel.EndTime))
+		}
+		response, err := util.HandlerRequest("GET", requestUrl, headerMap, nil)
+		jsonBody, errNewJson := simplejson.NewJson(response)
+		if err != nil || errNewJson != nil || jsonBody == nil {
+			return false, "get var data error"
+		}
+		stringValue := jsonBody.Get(p.VarResultField).MustString()
+		floatValue := jsonBody.Get(p.VarResultField).MustFloat64()
+		if stringValue == "" {
+			return true, fmt.Sprintf("%f", floatValue)
+		} else {
+			return true, stringValue
+		}
+	} else if p.VarType == "img_var" {
+		return true, "this is image url!"
+	} else {
+		return false, "not found var type!"
+	}
+}
+
+/**
+获取渲染进度
+*/
+func GetRenderProgress(renderId string, resourceId string, resourceType string, users *util.UserCookie) serializer.SsopaResponse {
+	var varRenderRecordModel []reportTemplateModel.VarRenderedRecord
+	var varRenderRecordSuccessCount int64
+	var varNum int64
+	result := make(map[string]interface{})
+	row := conf.Orm.Where("render_id = ?", renderId).Find(&varRenderRecordModel).RowsAffected
+	if row <= 0 {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "get", users.Name, users.Email, "when get render progress,get var render record error", nil)
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: "未找到render_id对应的记录",
+				Msg:  "获取变量渲染记录列表失败！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_VAR_RENDER_RECORD_GET_LIST_ERROR,
+		}
+	}
+	result["render_record"] = varRenderRecordModel
+	if resourceType == serializer.REPORT_AUTHORITY_MESSAGE_MODULE {
+		var authorityMessageModel authorityMessage.AuthorityMessage
+		_ = conf.Orm.Where("message_id = ?", resourceId).Find(&authorityMessageModel).Error
+		varNum = int64(len(strings.Split(authorityMessageModel.VarList, ",")))
+	}
+	if resourceType == serializer.REPORT_MODULE {
+		var reportModel report.Report
+		_ = conf.Orm.Where("report_id = ?", resourceId).Find(&reportModel).Error
+		varNum = int64(len(strings.Split(reportModel.VarList, ",")))
+	}
+	err := conf.Orm.Where("render_id = ? and render_status = ?", renderId, 1).Find(&varRenderRecordModel).Count(&varRenderRecordSuccessCount).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "get", users.Name, users.Email, "when get render progress,get var render record error", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "获取变量渲染记录列表失败！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_VAR_RENDER_RECORD_GET_LIST_ERROR,
+		}
+	}
+	per := (float64(varRenderRecordSuccessCount) / float64(varNum)) * 100
+	result["render_progress"] = math.Ceil(per)
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "get", users.Name, users.Email, "get render progress success", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: result,
+			Msg:  "获取渲染进度成功！",
+		},
+		ResCode: serializer.REPORT_TEMPLATE_VAR_RENDER_PROGRESS_GET_SUCCESS,
+	}
+
+}
+
+/**
+合并渲染记录到内容主体
+*/
+type MergeRenderRecordToContentParams struct {
+	ResourceId   string `form:"resource_id" json:"resource_id" binding:"required"`     // 资源id
+	ResourceType string `form:"resource_type" json:"resource_type" binding:"required"` // 资源类型
+	RenderId     string `form:"render_id" json:"render_id" binding:"required"`         // 渲染id
+}
+
+func (p *MergeRenderRecordToContentParams) MergeRenderRecordToContent(users *util.UserCookie) serializer.SsopaResponse {
+	var varRenderRecordModel []reportTemplateModel.VarRenderedRecord
+	err := conf.Orm.Where("render_id = ? and resource_id = ?", p.RenderId, p.ResourceId).Find(&varRenderRecordModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "merge", users.Name, users.Email, "when merge var render record to content, get record error", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "合并渲染记录到主体失败",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_VAR_MERGE_ERROR,
+		}
+	}
+	if p.ResourceType == serializer.REPORT_AUTHORITY_MESSAGE_MODULE {
+		var authorityMessageModel authorityMessage.AuthorityMessage
+		err := conf.Orm.Where("message_id = ?", p.ResourceId).Find(&authorityMessageModel).Error
+		if authorityMessageModel.MergeStatus == "Merged" {
+			goto SuccessMergeFunc
+		}
+		if err != nil {
+			middleware.CustomOutPutLog(serializer.REPORT_AUTHORITY_MESSAGE_MODULE, "merge", users.Name, users.Email, "when merge var render record to content, get authority record error", err.Error())
+			return serializer.SsopaResponse{
+				Response: serializer.Response{
+					Code: http.StatusInternalServerError,
+					Data: err.Error(),
+					Msg:  "合并渲染记录到主体失败",
+				},
+				ResCode: serializer.REPORT_AUTHORITY_MESSAGE_MERGE_ERROR,
+			}
+		}
+		for _, record := range varRenderRecordModel {
+			authorityMessageModel.Content = RenderVarServiceReplaceVarData(authorityMessageModel.Content, record.VarName, record.VarResult, 1)
+		}
+		authorityMessageModel.MergeStatus = "MergeD"
+		err = conf.Orm.Save(&authorityMessageModel).Error
+		if err != nil {
+			return serializer.SsopaResponse{
+				Response: serializer.Response{
+					Code: http.StatusInternalServerError,
+					Data: err.Error(),
+					Msg:  "合并渲染记录到主体失败",
+				},
+				ResCode: serializer.REPORT_AUTHORITY_MESSAGE_MERGE_ERROR,
+			}
+		}
+
+	}
+	if p.ResourceType == serializer.REPORT_MODULE {
+		var reportModel report.Report
+		err := conf.Orm.Where("report_id = ?", p.ResourceId).Find(&reportModel).Error
+		if reportModel.MergeStatus == "Merged" {
+			goto SuccessMergeFunc
+		}
+		if err != nil {
+			middleware.CustomOutPutLog(serializer.REPORT_MODULE, "merge", users.Name, users.Email, "when merge var render record to content, get report record error", err.Error())
+			return serializer.SsopaResponse{
+				Response: serializer.Response{
+					Code: http.StatusInternalServerError,
+					Data: err.Error(),
+					Msg:  "合并渲染记录到主体失败",
+				},
+				ResCode: serializer.REPORT_MERGE_ERROR,
+			}
+		}
+		for _, record := range varRenderRecordModel {
+			reportModel.Content = RenderVarServiceReplaceVarData(reportModel.Content, record.VarName, record.VarResult, 1)
+		}
+		reportModel.MergeStatus = "MergeD"
+		err = conf.Orm.Save(&reportModel).Error
+		if err != nil {
+			return serializer.SsopaResponse{
+				Response: serializer.Response{
+					Code: http.StatusInternalServerError,
+					Data: err.Error(),
+					Msg:  "合并渲染记录到主体失败",
+				},
+				ResCode: serializer.REPORT_MERGE_ERROR,
+			}
+		}
+	}
+SuccessMergeFunc:
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "merge", users.Name, users.Email, "when merge var render record to content, get record error", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: "ok",
+			Msg:  "合并渲染记录到主体成功",
+		},
+		ResCode: serializer.REPORT_TEMPLATE_VAR_MERGE_SUCCESS,
+	}
+}
+func RenderVarServiceReplaceVarData(content string, oldStr string, newStr string, count int) string {
+	return strings.Replace(content, oldStr, newStr, count)
 }

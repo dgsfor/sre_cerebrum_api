@@ -10,6 +10,7 @@ require (
 	github.com/go-ini/ini v1.62.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gomodule/redigo v1.8.5
+	github.com/google/uuid v1.3.0
 	github.com/huaweicloud/huaweicloud-sdk-go-obs v3.21.1+incompatible
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.58
 	github.com/jinzhu/gorm v1.9.16

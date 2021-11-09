@@ -76,3 +76,20 @@ func CustomOutPutLog(module string, action string, userName string, email string
 		zap.Any("data", data),
 	)
 }
+
+
+func RenderOutPutLog(renderId string,module string, action string, userName string, email string, msg string, data interface{}) {
+	log, _ := zap.NewProduction()
+	nowTime := time.Now()
+	log.Info("",
+		zap.String("render_id",renderId),
+		zap.String("log_type", "custom_output_log"),
+		zap.String("module", module),
+		zap.String("action", action),
+		zap.String("time", nowTime.Format(time.RFC3339)),
+		zap.String("user_name", userName),
+		zap.String("email", email),
+		zap.String("msg", msg),
+		zap.Any("data", data),
+	)
+}

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	authModel "ssopa/model/auth"
+	authorityMessageModel "ssopa/model/authority_message"
 	reportTemplateModel "ssopa/model/report_template"
 	"time"
 )
@@ -35,6 +36,7 @@ func SetupOrm()  {
 		GetConfig("mysql::db"))
 	Orm, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: newLogger,
+		SkipDefaultTransaction: true,
 	})
 	if err!= nil {
 		log.Panicln(err)
@@ -43,4 +45,8 @@ func SetupOrm()  {
 	_ = Orm.AutoMigrate(&authModel.SsoPaUsers{})
 	_ = Orm.AutoMigrate(&reportTemplateModel.ReportTemplate{})
 	_ = Orm.AutoMigrate(&reportTemplateModel.ReportTemplateVar{})
+	_ = Orm.AutoMigrate(&reportTemplateModel.VarRenderedRecord{})
+	_ = Orm.AutoMigrate(&authorityMessageModel.AuthorityMessage{})
+	_ = Orm.AutoMigrate(&authorityMessageModel.AuthorityMessageSendHistory{})
+	_ = Orm.AutoMigrate(&authorityMessageModel.NoticeChannel{})
 }
