@@ -81,11 +81,13 @@ func (p *CreateAuthorityMessageParams) CreateAuthorityMessage(users *util.UserCo
 			ResCode: serializer.REPORT_AUTHORITY_MESSAGE_CREATE_ERROR,
 		}
 	}
-	middleware.CustomOutPutLog(serializer.REPORT_AUTHORITY_MESSAGE_MODULE, "create", users.Name, users.Email, "start to create var rendered record", nil)
-	report_template.GenerateVarRenderedRecord(authorityMessageId, reportTemplateModel.VarList)
-	middleware.CustomOutPutLog(serializer.REPORT_AUTHORITY_MESSAGE_MODULE, "create", users.Name, users.Email, "start to rendered var ", nil)
-	report_template.RenderedVar(renderId.String(), serializer.REPORT_AUTHORITY_MESSAGE_MODULE, authorityMessageId, p.TemplateId, reportTemplateModel.VarList)
-	middleware.CustomOutPutLog(serializer.REPORT_AUTHORITY_MESSAGE_MODULE, "create", users.Name, users.Email, "create authority message success!", nil)
+	if reportTemplateModel.VarList != "" {
+		middleware.CustomOutPutLog(serializer.REPORT_AUTHORITY_MESSAGE_MODULE, "create", users.Name, users.Email, "start to create var rendered record", nil)
+		report_template.GenerateVarRenderedRecord(authorityMessageId, reportTemplateModel.VarList)
+		middleware.CustomOutPutLog(serializer.REPORT_AUTHORITY_MESSAGE_MODULE, "create", users.Name, users.Email, "start to rendered var ", nil)
+		report_template.RenderedVar(renderId.String(), serializer.REPORT_AUTHORITY_MESSAGE_MODULE, authorityMessageId, p.TemplateId, reportTemplateModel.VarList)
+		middleware.CustomOutPutLog(serializer.REPORT_AUTHORITY_MESSAGE_MODULE, "create", users.Name, users.Email, "create authority message success!", nil)
+	}
 	return serializer.SsopaResponse{
 		Response: serializer.Response{
 			Code: http.StatusOK,

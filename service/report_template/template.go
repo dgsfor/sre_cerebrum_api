@@ -20,9 +20,9 @@ type CreateReportTemplateParams struct {
 
 type UpdateReportTemplateParams struct {
 	TemplateId string `form:"template_id" json:"template_id" binding:"required"`
-	Content    string `form:"content" json:"content" binding:"required"`     // markdown内容
-	VarList    string `form:"var_list" json:"var_list" binding:"required"`   // 变量json串
-	SlotList   string `form:"slot_list" json:"slot_list"` // 批注插槽json串
+	Content    string `form:"content" json:"content" binding:"required"` // markdown内容
+	VarList    string `form:"var_list" json:"var_list"`                  // 变量json串
+	SlotList   string `form:"slot_list" json:"slot_list"`                // 批注插槽json串
 }
 
 func (p *CreateReportTemplateParams) CreateReportTemplate(users *util.UserCookie) serializer.SsopaResponse {
