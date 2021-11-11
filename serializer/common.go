@@ -89,11 +89,22 @@ const (
 	REPORT_AUTHORITY_MESSAGE_AUDIT_ERROR               = 50015
 	REPORT_AUTHORITY_MESSAGE_AUDIT_SUCCESS             = 50016
 	REPORT_MODULE                                      = "report"
+	REPORT_CREATE_SUCCESS                              = 60001
+	REPORT_CREATE_ERROR                                = 60002
+	REPORT_EXIST                                       = 60003
+	REPORT_GET_LIST_ERROR                              = 60004
+	REPORT_GET_LIST_SUCCESS                            = 60005
+	REPORT_GET_ERROR                                   = 60006
+	REPORT_GET_SUCCESS                                 = 60007
+	REPORT_UPDATE_ERROR                                = 60008
+	REPORT_UPDATE_SUCCESS                              = 60009
+	REPORT_DELETE_ERROR                                = 60010
+	REPORT_DELETE_SUCCESS                              = 60011
 	REPORT_MERGE_ERROR                                 = 60012
 	REPORT_MERGE_SUCCESS                               = 60013
+	REPORT_RENDER_SUCCESS                              = 60014
 	MESSAGE_MODULE                                     = "message"
 	EVENT_MODULE                                       = "event"
-
-	PARAMS_ERROR = 40000 // 参数错误
-	ALL_SUCCESS  = 20000 // 成功
+	PARAMS_ERROR                                       = 40000 // 参数错误
+	ALL_SUCCESS                                        = 20000 // 成功
 )

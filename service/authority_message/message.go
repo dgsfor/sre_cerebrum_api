@@ -94,7 +94,7 @@ func (p *CreateAuthorityMessageParams) CreateAuthorityMessage(users *util.UserCo
 			Data: nil,
 			Msg:  "创建权威消息成功",
 		},
-		ResCode: 20001,
+		ResCode: serializer.REPORT_AUTHORITY_MESSAGE_CREATE_SUCCESS,
 	}
 }
 

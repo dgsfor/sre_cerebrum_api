@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	authorityMessageController "ssopa/controller/authority_message"
 	oauthController "ssopa/controller/oauth"
+	reportController "ssopa/controller/report"
 	reportTemplateController "ssopa/controller/report_template"
 	"ssopa/middleware"
 	"time"
@@ -53,6 +54,11 @@ func NewRouter() *gin.Engine {
 		reportTemplate.GET("/date", reportTemplateController.GetDate)
 		reportTemplate.GET("/date2", reportTemplateController.GetDate2)
 		reportTemplate.GET("/date3", reportTemplateController.GetDate3)
+		// report
+		report := v1.Group("/report")
+		report.POST("/report",atLeastLoginMiddleware,reportController.CreateReport)
+		report.GET("/report",atLeastLoginMiddleware,reportController.GetReportList)
+		report.GET("/report_render/:report_id",atLeastLoginMiddleware,reportController.RenderReport)
 		// authority message
 		authorityMessage := v1.Group("/authority_message")
 		authorityMessage.POST("/notice_channel", atLeastLoginMiddleware, authorityMessageController.CreateNoticeChannel)

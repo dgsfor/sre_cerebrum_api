@@ -182,6 +182,7 @@ func RenderedVarService(renderId string, resourceType string, resourceId string,
 			middleware.RenderOutPutLog(renderId, serializer.REPORT_TEMPLATE_VAR_MODULE, "render", "auto", "auto", "render var error,can't not found var register,not inner var!",
 				"resourceId: "+resourceId+",vaName: "+varName)
 			varRenderRecordModel.RenderStatus = 3
+			varRenderRecordModel.RenderId = renderId
 			_ = conf.Orm.Save(&varRenderRecordModel).Error
 			return
 		} else {
@@ -195,13 +196,7 @@ RenderFunc:
 	if getStatus {
 		middleware.RenderOutPutLog(renderId, serializer.REPORT_TEMPLATE_VAR_MODULE, "render", "auto", "auto", "render var , get var data success",
 			"resourceId: "+resourceId+",vaName: "+varName+",newData:"+dataResult)
-		if resourceType == serializer.REPORT_AUTHORITY_MESSAGE_MODULE {
-			varRenderRecordModel.RenderStatus = 1
-		}
-		if resourceType == serializer.REPORT_MODULE {
-			// 渲染完成之后，就修改渲染变量记录的状态,并保存渲染内容
-			varRenderRecordModel.RenderStatus = 1
-		}
+		varRenderRecordModel.RenderStatus = 1
 	} else {
 		middleware.RenderOutPutLog(renderId, serializer.REPORT_TEMPLATE_VAR_MODULE, "render", "auto", "auto", "render var , get var data failure",
 			"resourceId: "+resourceId+",vaName: "+varName+",error:"+dataResult)
@@ -395,6 +390,7 @@ func (p *MergeRenderRecordToContentParams) MergeRenderRecordToContent(users *uti
 			reportModel.Content = RenderVarServiceReplaceVarData(reportModel.Content, record.VarName, record.VarResult, 1)
 		}
 		reportModel.MergeStatus = "MergeD"
+		reportModel.Status = "ToBeLabeled"
 		err = conf.Orm.Save(&reportModel).Error
 		if err != nil {
 			return serializer.SsopaResponse{

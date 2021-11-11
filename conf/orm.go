@@ -9,6 +9,7 @@ import (
 	"os"
 	authModel "ssopa/model/auth"
 	authorityMessageModel "ssopa/model/authority_message"
+	reportModel "ssopa/model/report"
 	reportTemplateModel "ssopa/model/report_template"
 	"time"
 )
@@ -49,4 +50,7 @@ func SetupOrm()  {
 	_ = Orm.AutoMigrate(&authorityMessageModel.AuthorityMessage{})
 	_ = Orm.AutoMigrate(&authorityMessageModel.AuthorityMessageSendHistory{})
 	_ = Orm.AutoMigrate(&authorityMessageModel.NoticeChannel{})
+	_ = Orm.AutoMigrate(&reportModel.Report{})
+	_ = Orm.AutoMigrate(&reportModel.Replica{})
+
 }
