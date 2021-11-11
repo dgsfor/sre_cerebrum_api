@@ -58,7 +58,10 @@ func NewRouter() *gin.Engine {
 		report := v1.Group("/report")
 		report.POST("/report",atLeastLoginMiddleware,reportController.CreateReport)
 		report.GET("/report",atLeastLoginMiddleware,reportController.GetReportList)
+		report.GET("/report/:report_id",atLeastLoginMiddleware,reportController.GetReport)
+		report.PUT("/report",atLeastLoginMiddleware,reportController.UpdateReport)
 		report.GET("/report_render/:report_id",atLeastLoginMiddleware,reportController.RenderReport)
+		report.GET("/report_preview/:report_id/:preview_hash",reportController.Preview)
 		// authority message
 		authorityMessage := v1.Group("/authority_message")
 		authorityMessage.POST("/notice_channel", atLeastLoginMiddleware, authorityMessageController.CreateNoticeChannel)

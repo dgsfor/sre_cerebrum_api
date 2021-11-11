@@ -23,6 +23,11 @@ type CreateReportParams struct {
 	EndTime    string `form:"end_time" json:"end_time" binding:"required"`       // 结束时间
 }
 
+type UpdateReportParams struct {
+	ReportId string `form:"report_id" json:"report_id" binding:"required"`
+	Content  string `form:"content" json:"content" binding:"required"` // markdown内容
+}
+
 // 创建报告
 func (p *CreateReportParams) CreateReport(users *util.UserCookie) serializer.SsopaResponse {
 	var reportTemplateModel reportTemplate.ReportTemplate
@@ -114,10 +119,10 @@ func GetReportList(users *util.UserCookie) serializer.SsopaResponse {
 // 渲染报告
 func RenderReport(users *util.UserCookie, reportId string) serializer.SsopaResponse {
 	var reportModel report.Report
-	err := conf.Orm.Where("report_id = ?",reportId).Find(&reportModel).Error
+	err := conf.Orm.Where("report_id = ?", reportId).Find(&reportModel).Error
 	if err != nil {
 		middleware.CustomOutPutLog(serializer.REPORT_MODULE, "render", users.Name, users.Email, "get report list error!", err.Error())
- 		return serializer.SsopaResponse{
+		return serializer.SsopaResponse{
 			Response: serializer.Response{
 				Code: http.StatusInternalServerError,
 				Data: err.Error(),
@@ -151,5 +156,95 @@ func RenderReport(users *util.UserCookie, reportId string) serializer.SsopaRespo
 			Msg:  "渲染报告成功成功！",
 		},
 		ResCode: serializer.REPORT_RENDER_SUCCESS,
+	}
+}
+
+// 获取报告详情
+func GetReport(users *util.UserCookie, reportId string) serializer.SsopaResponse {
+	var reportModel report.Report
+	err := conf.Orm.Where("report_id = ?", reportId).Find(&reportModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_MODULE, "get", users.Name, users.Email, "get report specified error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "获取运营报告详情失败！",
+			},
+			ResCode: serializer.REPORT_GET_ERROR,
+		}
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_MODULE, "get", users.Name, users.Email, "report specified success!", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: reportModel,
+			Msg:  "获取运营报告详情成功！",
+		},
+		ResCode: serializer.REPORT_GET_SUCCESS,
+	}
+}
+
+// 更新报告内容
+
+func (p *UpdateReportParams) UpdateReport(users *util.UserCookie) serializer.SsopaResponse {
+	var reportModel report.Report
+	err := conf.Orm.Where("report_id = ?", p.ReportId).Find(&reportModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_MODULE, "get", users.Name, users.Email, "get report specified error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "获取运营报告详情失败！",
+			},
+			ResCode: serializer.REPORT_GET_ERROR,
+		}
+	}
+	reportModel.Content = p.Content
+	err = conf.Orm.Save(&reportModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_MODULE, "update", users.Name, users.Email, "update report error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "更新运营报告失败！",
+			},
+			ResCode: serializer.REPORT_UPDATE_ERROR,
+		}
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_MODULE, "update", users.Name, users.Email, "update report success!", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: nil,
+			Msg:  "更新运营报告成功！",
+		},
+		ResCode: serializer.REPORT_UPDATE_SUCCESS,
+	}
+}
+
+// 预览报告
+func Preview(reportId string, previewHash string) serializer.SsopaResponse {
+	var reportModel report.Report
+	err := conf.Orm.Where("report_id = ? and preview_hash = ?", reportId,previewHash).Find(&reportModel).Error
+	if err != nil {
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "获取运营报告详情失败！",
+			},
+			ResCode: serializer.REPORT_GET_ERROR,
+		}
+	}
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: reportModel,
+			Msg:  "获取运营报告详情成功！",
+		},
+		ResCode: serializer.REPORT_GET_SUCCESS,
 	}
 }
