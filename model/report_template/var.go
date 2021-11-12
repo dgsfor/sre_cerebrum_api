@@ -48,3 +48,34 @@ type VarRenderedRecord struct {
 func (VarRenderedRecord) TableName() string {
 	return "var_rendered_record"
 }
+
+/**
+批注相关
+*/
+// 批注插槽注册表
+type ReportTemplateSlot struct {
+	model.BaseModel
+	TemplateId    string `json:"template_id"`     // 模板id
+	SlotName      string `json:"slot_name"`       // 批注插槽名称
+	SlotNameAlias string `json:"slot_name_alias"` // 批注插槽别名
+}
+
+func (ReportTemplateSlot) TableName() string {
+	return "report_template_slot"
+}
+
+// 批注表
+type SlotAnnotate struct {
+	model.BaseModel
+	ReportId        string `json:"report_id"`                            // 报告id
+	SlotName        string `json:"slot_name"`                            // 批注插槽名称
+	SlotNameAlias   string `json:"slot_name_alias"`                      // 批注插槽别名
+	AnnotateContent string `json:"annotate_content" gorm:"default:null"` // 插槽内容
+	AnnotateTag     string `json:"annotate_tag" gorm:"default:null"`     // 批注标签
+	Creator         string `json:"creator" gorm:"default:null"`          // 批注人
+	SlotStatus      int64   `json:"slot_status" gorm:"default: 1"`    // 插槽状态，1 未注册，2 未批注，3 批注完成
+}
+
+func (SlotAnnotate) TableName() string {
+	return "slot_annotate"
+}

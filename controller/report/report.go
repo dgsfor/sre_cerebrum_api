@@ -118,3 +118,33 @@ func Preview(c *gin.Context) {
 		ResCode: result.ResCode,
 	})
 }
+
+// 完结报告
+func FinishReport(c *gin.Context) {
+	users, _ := util.GetUserCookie(c)
+	reportId := c.Param("report_id")
+	result := report.FinishReport(users, reportId)
+	c.JSON(result.Code, serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: result.Code,
+			Data: result.Data,
+			Msg:  result.Msg,
+		},
+		ResCode: result.ResCode,
+	})
+}
+
+// 获取报告涉及到的所有批注列表
+func GetReportSlotAnnotateList(c *gin.Context) {
+	users, _ := util.GetUserCookie(c)
+	reportId := c.Param("report_id")
+	result := report.GetReportSlotAnnotateList(users, reportId)
+	c.JSON(result.Code, serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: result.Code,
+			Data: result.Data,
+			Msg:  result.Msg,
+		},
+		ResCode: result.ResCode,
+	})
+}

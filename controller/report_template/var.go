@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// 新增运营模板
+// 新增模板变量注册
 func CreateReportTemplateVar(c *gin.Context) {
 	users, _ := util.GetUserCookie(c)
 	svc := report_template.CreateReportTemplateVarParams{}
@@ -35,7 +35,7 @@ func CreateReportTemplateVar(c *gin.Context) {
 	})
 }
 
-// 获取所有运营模板
+// 获取所有变量注册
 func GetReportTemplateVarList(c *gin.Context) {
 	users, _ := util.GetUserCookie(c)
 	result := report_template.GetReportTemplateVarList(users)
@@ -108,6 +108,64 @@ func MergeRenderRecordToContent(c *gin.Context) {
 	})
 }
 
+// 新增插槽注册
+func CreateReportTemplateSlot(c *gin.Context) {
+	users, _ := util.GetUserCookie(c)
+	svc := report_template.CreateReportTemplateSlotParams{}
+	if err := c.ShouldBind(&svc); err != nil {
+		c.JSON(http.StatusBadRequest, serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusBadRequest,
+				Data: err.Error(),
+				Msg:  "参数错误，请检查！",
+			},
+			ResCode: 40000,
+		})
+		return
+	}
+	result := svc.CreateReportTemplateSlot(users)
+	c.JSON(result.Code, serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: result.Code,
+			Data: result.Data,
+			Msg:  result.Msg,
+		},
+		ResCode: result.ResCode,
+	})
+}
+
+// 获取所有插槽
+func GetReportTemplateSlotList(c *gin.Context) {
+	users, _ := util.GetUserCookie(c)
+	result := report_template.GetReportTemplateSlotList(users)
+	c.JSON(result.Code, serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: result.Code,
+			Data: result.Data,
+			Msg:  result.Msg,
+		},
+		ResCode: result.ResCode,
+	})
+}
+
+// 删除指定插槽
+func DeleteReportTemplateSlot(c *gin.Context) {
+	users, _ := util.GetUserCookie(c)
+	templateId := c.Param("template_id")
+	slotName := c.Param("slot_name")
+	result := report_template.DeleteReportTemplateSlot(users, templateId, slotName)
+	c.JSON(result.Code, serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: result.Code,
+			Data: result.Data,
+			Msg:  result.Msg,
+		},
+		ResCode: result.ResCode,
+	})
+}
+/**
+测试代码
+ */
 func GetDate(c *gin.Context) {
 	time.Sleep(time.Duration(10) * time.Second)
 	c.JSON(http.StatusOK, serializer.SsopaResponse{
@@ -143,3 +201,5 @@ func GetDate3(c *gin.Context) {
 		ResCode: serializer.REPORT_TEMPLATE_VAR_DELETE_SUCCESS,
 	})
 }
+
+

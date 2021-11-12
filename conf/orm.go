@@ -47,10 +47,11 @@ func SetupOrm()  {
 	_ = Orm.AutoMigrate(&reportTemplateModel.ReportTemplate{})
 	_ = Orm.AutoMigrate(&reportTemplateModel.ReportTemplateVar{})
 	_ = Orm.AutoMigrate(&reportTemplateModel.VarRenderedRecord{})
+	_ = Orm.AutoMigrate(&reportTemplateModel.ReportTemplateSlot{})
+	_ = Orm.AutoMigrate(&reportTemplateModel.SlotAnnotate{})
 	_ = Orm.AutoMigrate(&authorityMessageModel.AuthorityMessage{})
 	_ = Orm.AutoMigrate(&authorityMessageModel.AuthorityMessageSendHistory{})
 	_ = Orm.AutoMigrate(&authorityMessageModel.NoticeChannel{})
 	_ = Orm.AutoMigrate(&reportModel.Report{})
 	_ = Orm.AutoMigrate(&reportModel.Replica{})
-
 }

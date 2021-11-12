@@ -54,14 +54,20 @@ func NewRouter() *gin.Engine {
 		reportTemplate.GET("/date", reportTemplateController.GetDate)
 		reportTemplate.GET("/date2", reportTemplateController.GetDate2)
 		reportTemplate.GET("/date3", reportTemplateController.GetDate3)
+		// report template slot
+		reportTemplate.POST("/slot", atLeastLoginMiddleware, reportTemplateController.CreateReportTemplateSlot)
+		reportTemplate.GET("/slot", atLeastLoginMiddleware, reportTemplateController.GetReportTemplateSlotList)
+		reportTemplate.DELETE("/slot/:template_id/:slot_name", atLeastLoginMiddleware, reportTemplateController.DeleteReportTemplateSlot)
 		// report
 		report := v1.Group("/report")
 		report.POST("/report",atLeastLoginMiddleware,reportController.CreateReport)
 		report.GET("/report",atLeastLoginMiddleware,reportController.GetReportList)
 		report.GET("/report/:report_id",atLeastLoginMiddleware,reportController.GetReport)
+		report.GET("/slot/:report_id",atLeastLoginMiddleware,reportController.GetReportSlotAnnotateList)
 		report.PUT("/report",atLeastLoginMiddleware,reportController.UpdateReport)
 		report.GET("/report_render/:report_id",atLeastLoginMiddleware,reportController.RenderReport)
 		report.GET("/report_preview/:report_id/:preview_hash",reportController.Preview)
+		report.PUT("/report_finish/:report_id",atLeastLoginMiddleware,reportController.FinishReport)
 		// authority message
 		authorityMessage := v1.Group("/authority_message")
 		authorityMessage.POST("/notice_channel", atLeastLoginMiddleware, authorityMessageController.CreateNoticeChannel)

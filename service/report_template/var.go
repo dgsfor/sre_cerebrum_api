@@ -28,6 +28,12 @@ type CreateReportTemplateVarParams struct {
 	VarDesc        string `form:"var_desc" json:"var_desc" binding:"required"`                 // 变量备注，变量说明
 }
 
+type CreateReportTemplateSlotParams struct {
+	TemplateId    string `form:"template_id" json:"template_id"`                            // 模板id
+	SlotName      string `form:"slot_name" json:"slot_name" binding:"required"`             // 插槽名称
+	SlotNameAlias string `form:"slot_name_alias" json:"slot_name_alias" binding:"required"` // 插槽别名
+}
+
 func (p *CreateReportTemplateVarParams) CreateReportTemplateVar(users *util.UserCookie) serializer.SsopaResponse {
 	var row int64
 	if p.TemplateId != "" {
@@ -130,6 +136,99 @@ func DeleteReportTemplateVar(users *util.UserCookie, templateId string, varName 
 	}
 }
 
+func (p *CreateReportTemplateSlotParams) CreateReportTemplateSlot(users *util.UserCookie) serializer.SsopaResponse {
+	row := conf.Orm.Where("template_id = ? and slot_name = ?", p.TemplateId, p.SlotName).Find(&reportTemplateModel.ReportTemplateSlot{}).RowsAffected
+	if row >= 1 {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "create", users.Name, users.Email, "report template var exist!", nil)
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: nil,
+				Msg:  "插槽已经存在，请检查！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_SLOT_EXIST,
+		}
+	}
+	reportTemplateSlotModel := &reportTemplateModel.ReportTemplateSlot{
+		BaseModel:     model.BaseModel{},
+		TemplateId:    p.TemplateId,
+		SlotName:      p.SlotName,
+		SlotNameAlias: p.SlotNameAlias,
+	}
+	err := conf.Orm.Create(&reportTemplateSlotModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "create", users.Name, users.Email, "report template slot create error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "新增插槽注册失败！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_SLOT_CREATE_ERROR,
+		}
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "create", users.Name, users.Email, "report template var create success!", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: reportTemplateSlotModel,
+			Msg:  "新增插槽注册成功！",
+		},
+		ResCode: serializer.REPORT_TEMPLATE_SLOT_CREATE_SUCCESS,
+	}
+}
+
+func GetReportTemplateSlotList(users *util.UserCookie) serializer.SsopaResponse {
+	var reportTemplateSlotModel []reportTemplateModel.ReportTemplateSlot
+	err := conf.Orm.Order("created_at desc").Find(&reportTemplateSlotModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "get", users.Name, users.Email, "get report template slot list error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "获取插槽列表失败！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_SLOT_GET_LIST_ERROR,
+		}
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "get", users.Name, users.Email, "report template slot list success!", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: reportTemplateSlotModel,
+			Msg:  "获取插槽列表成功！",
+		},
+		ResCode: serializer.REPORT_TEMPLATE_SLOT_GET_LIST_SUCCESS,
+	}
+}
+
+func DeleteReportTemplateSlot(users *util.UserCookie, templateId string, slotName string) serializer.SsopaResponse {
+	var reportTemplateSlotModel reportTemplateModel.ReportTemplateSlot
+	err := conf.Orm.Where("template_id = ? and slot_name = ?", templateId, slotName).Delete(&reportTemplateSlotModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "delete", users.Name, users.Email, "delete report template slot specified error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "删除插槽失败！",
+			},
+			ResCode: serializer.REPORT_TEMPLATE_SLOT_DELETE_ERROR,
+		}
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "delete", users.Name, users.Email, "delete report template slot specified success!", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: nil,
+			Msg:  "删除插槽成功！",
+		},
+		ResCode: serializer.REPORT_TEMPLATE_SLOT_DELETE_SUCCESS,
+	}
+}
+
+
 // 批量创建变量渲染记录
 func GenerateVarRenderedRecord(resourceId string, varListString string) {
 	varList := strings.Split(varListString, ",")
@@ -149,6 +248,37 @@ func GenerateVarRenderedRecordService(resourceId string, varName string) {
 		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "create", "auto", "auto", "create var rendered record error!", resourceId+":"+err.Error())
 	}
 	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_VAR_MODULE, "create", "auto", "auto", "create var rendered record success!", resourceId+":"+varName)
+}
+// 批量创建插槽
+func GenerateSlot(templateId string, resourceId string, slotListString string) {
+	slotList := strings.Split(slotListString, ",")
+	for _, slotName := range slotList {
+		// 如果这里使用go来做，可能会造成有些变量还没有创建出来，然后就已经到了渲染步骤，最终渲染失败
+		GenerateSlotService(templateId, resourceId, slotName)
+	}
+}
+func GenerateSlotService(templateId string, resourceId string, slotName string) {
+	var slotStatus int64
+	var reportTemplateSlotModel reportTemplateModel.ReportTemplateSlot
+	row := conf.Orm.Where("template_id = ? and slot_name = ?",templateId, slotName).Find(&reportTemplateSlotModel).RowsAffected
+	if row < 1 {
+		slotStatus = 1
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "create", "auto", "auto", "get slot register error", resourceId+":"+slotName)
+	} else {
+		slotStatus = 2
+	}
+	slotAnnotateModel := &reportTemplateModel.SlotAnnotate{
+		BaseModel:       model.BaseModel{},
+		ReportId:        resourceId,
+		SlotName:        slotName,
+		SlotNameAlias:   reportTemplateSlotModel.SlotNameAlias,
+		SlotStatus:      slotStatus,
+	}
+	err := conf.Orm.Create(&slotAnnotateModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "create", "auto", "auto", "create slot error!", resourceId+":"+err.Error())
+	}
+	middleware.CustomOutPutLog(serializer.REPORT_TEMPLATE_SLOT_MODULE, "create", "auto", "auto", "create slot success!", resourceId+":"+slotName)
 }
 
 /**
