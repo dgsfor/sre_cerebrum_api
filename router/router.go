@@ -18,15 +18,13 @@ var (
 
 // NewRouter 路由配置
 func NewRouter() *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
+	gin.DefaultWriter = ioutil.Discard
 	atLeastLoginMiddleware := middleware.MiddlewareAuthorization()
 	r := gin.Default()
 	r.Use(middleware.Cors())
-	// 关闭gin默认AccessLog日志
-	if gin.Mode() == "release" {
-		gin.DefaultWriter = ioutil.Discard
-		r.Use(middleware.GinZap(Logger, time.RFC3339, true))
-		r.Use(gin.Recovery())
-	}
+	r.Use(middleware.GinZap(Logger, time.RFC3339, true))
+	r.Use(gin.Recovery())
 	// 路由
 	v1 := r.Group("/api/ssopa/v1")
 	{
