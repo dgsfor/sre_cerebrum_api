@@ -9,6 +9,7 @@ import (
 	"os"
 	authModel "ssopa/model/auth"
 	authorityMessageModel "ssopa/model/authority_message"
+	chatModel "ssopa/model/instant_chat"
 	reportModel "ssopa/model/report"
 	reportTemplateModel "ssopa/model/report_template"
 	"time"
@@ -18,7 +19,7 @@ var (
 	Orm *gorm.DB
 )
 
-func SetupOrm()  {
+func SetupOrm() {
 
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -36,10 +37,10 @@ func SetupOrm()  {
 		GetConfig("mysql::host"),
 		GetConfig("mysql::db"))
 	Orm, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: newLogger,
+		Logger:                 newLogger,
 		SkipDefaultTransaction: true,
 	})
-	if err!= nil {
+	if err != nil {
 		log.Panicln(err)
 	}
 
@@ -54,4 +55,5 @@ func SetupOrm()  {
 	_ = Orm.AutoMigrate(&authorityMessageModel.NoticeChannel{})
 	_ = Orm.AutoMigrate(&reportModel.Report{})
 	_ = Orm.AutoMigrate(&reportModel.Replica{})
+	_ = Orm.AutoMigrate(&chatModel.InstantChatMessage{})
 }

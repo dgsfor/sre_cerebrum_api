@@ -29,6 +29,8 @@ const (
 	PASSWORD_ERROR                                      = 10005 // 密码错误
 	SETCOOKIE_FAILURE                                   = 10006 // 设置cookie失败
 	LOGOUT_SUCCESS                                      = 10007 // 退出登录成功
+	USER_GET_LIST_ERROR                                 = 10008
+	USER_GET_LIST_SUCCESS                               = 10009
 	REPORT_TEMPLATE_MODULE                              = "report_template"
 	REPORT_TEMPLATE_CREATE_SUCCESS                      = 20001
 	REPORT_TEMPLATE_CREATE_ERROR                        = 20002
@@ -124,6 +126,22 @@ const (
 	REPORT_FINISH_SUCCESS                               = 70015
 	MESSAGE_MODULE                                      = "message"
 	EVENT_MODULE                                        = "event"
+	INSTNAT_CHAT_MESSAGE_MODULE                         = "instant_chat_message"
+	INSTNAT_CHAT_MESSAGE_CREATE_SUCCESS                 = 80001
+	INSTNAT_CHAT_MESSAGE_CREATE_ERROR                   = 80002
+	INSTNAT_CHAT_MESSAGE_EXIST                          = 80003
+	INSTNAT_CHAT_MESSAGE_GET_LIST_ERROR                 = 80004
+	INSTNAT_CHAT_MESSAGE_GET_LIST_SUCCESS               = 80005
+	INSTNAT_CHAT_MESSAGE_GET_ERROR                      = 80006
+	INSTNAT_CHAT_MESSAGE_GET_SUCCESS                    = 80007
+	INSTNAT_CHAT_MESSAGE_UPDATE_ERROR                   = 80008
+	INSTNAT_CHAT_MESSAGE_UPDATE_SUCCESS                 = 80009
+	INSTNAT_CHAT_MESSAGE_DELETE_ERROR                   = 80010
+	INSTNAT_CHAT_MESSAGE_DELETE_SUCCESS                 = 80011
+	INSTNAT_CHAT_MESSAGE_MERGE_ERROR                    = 80012
+	INSTNAT_CHAT_MESSAGE_MERGE_SUCCESS                  = 80013
+	INSTNAT_CHAT_MESSAGE_RENDER_SUCCESS                 = 80014
+	INSTNAT_CHAT_MESSAGE_FINISH_SUCCESS                 = 80015
 	PARAMS_ERROR                                        = 40000 // 参数错误
 	ALL_SUCCESS                                         = 20000 // 成功
 )

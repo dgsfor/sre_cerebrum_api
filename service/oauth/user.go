@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"github.com/google/uuid"
 	"net/http"
 	"ssopa/conf"
 	"ssopa/middleware"
@@ -44,7 +45,7 @@ func (p *LoginParams) Login() serializer.SsopaResponse {
 			ResCode: serializer.PASSWORD_ERROR,
 		}
 	}
-	middleware.CustomOutPutLog(serializer.USER_MODULE, "login", p.UserName, "nil", "login success",nil)
+	middleware.CustomOutPutLog(serializer.USER_MODULE, "login", p.UserName, "nil", "login success", nil)
 	return serializer.SsopaResponse{
 		Response: serializer.Response{
 			Code: http.StatusOK,
@@ -57,9 +58,9 @@ func (p *LoginParams) Login() serializer.SsopaResponse {
 
 func (p *RegisterParams) Register() serializer.SsopaResponse {
 	var SsoPaUserModel auth.SsoPaUsers
-	err := conf.Orm.Where("user_name = ?", p.UserName).Find(&SsoPaUserModel).RowsAffected
+	err := conf.Orm.Where("email = ?", p.Email).Find(&SsoPaUserModel).RowsAffected
 	if err >= 1 {
-		middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "user exist",nil)
+		middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "user exist", nil)
 		return serializer.SsopaResponse{
 			Response: serializer.Response{
 				Code: http.StatusInternalServerError,
@@ -69,12 +70,14 @@ func (p *RegisterParams) Register() serializer.SsopaResponse {
 			ResCode: serializer.USER_EXISTS,
 		}
 	}
+	userId, _ := uuid.NewUUID()
+	SsoPaUserModel.UserId = userId.String()
 	SsoPaUserModel.UserName = p.UserName
 	SsoPaUserModel.Password = p.Password
 	SsoPaUserModel.Email = p.Email
 	createErr := conf.Orm.Create(&SsoPaUserModel).Error
 	if createErr != nil {
-		middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "register error",createErr.Error())
+		middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "register error", createErr.Error())
 		return serializer.SsopaResponse{
 			Response: serializer.Response{
 				Code: http.StatusInternalServerError,
@@ -84,7 +87,7 @@ func (p *RegisterParams) Register() serializer.SsopaResponse {
 			ResCode: serializer.CREATE_USER_ERROR,
 		}
 	}
-	middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "register success",nil)
+	middleware.CustomOutPutLog(serializer.USER_MODULE, "register", p.UserName, p.Email, "register success", nil)
 	return serializer.SsopaResponse{
 		Response: serializer.Response{
 			Code: http.StatusOK,
@@ -92,5 +95,30 @@ func (p *RegisterParams) Register() serializer.SsopaResponse {
 			Msg:  "注册成功，请登录!",
 		},
 		ResCode: serializer.CREATE_USER_SUCCESS,
+	}
+}
+
+func GetUserList(users *util.UserCookie) serializer.SsopaResponse {
+	var userListModel []auth.SsoPaUsers
+	err := conf.Orm.Order("created_at desc").Find(&userListModel).Error
+	if err != nil {
+		middleware.CustomOutPutLog(serializer.USER_MODULE, "get", users.Name, users.Email, "get user list error!", err.Error())
+		return serializer.SsopaResponse{
+			Response: serializer.Response{
+				Code: http.StatusInternalServerError,
+				Data: err.Error(),
+				Msg:  "获取用户列表失败！",
+			},
+			ResCode: serializer.USER_GET_LIST_ERROR,
+		}
+	}
+	middleware.CustomOutPutLog(serializer.USER_MODULE, "get", users.Name, users.Email, "report user list success!", nil)
+	return serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: http.StatusOK,
+			Data: userListModel,
+			Msg:  "获取用户列表成功！",
+		},
+		ResCode: serializer.USER_GET_LIST_SUCCESS,
 	}
 }

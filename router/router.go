@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"io/ioutil"
 	authorityMessageController "ssopa/controller/authority_message"
+	instantChatMessageController "ssopa/controller/instant_chat"
 	oauthController "ssopa/controller/oauth"
 	reportController "ssopa/controller/report"
 	reportTemplateController "ssopa/controller/report_template"
@@ -35,6 +36,7 @@ func NewRouter() *gin.Engine {
 		ur.GET("/logout", oauthController.Logout)
 		ur.GET("/userinfo", atLeastLoginMiddleware, oauthController.GetUserInfo)
 		ur.GET("/check_login", atLeastLoginMiddleware, oauthController.CheckLogin)
+		ur.GET("/user_list", atLeastLoginMiddleware, oauthController.GetUserList)
 		// report template
 		reportTemplate := v1.Group("/report_template")
 		reportTemplate.POST("/template", atLeastLoginMiddleware, reportTemplateController.CreateReportTemplate)
@@ -58,14 +60,14 @@ func NewRouter() *gin.Engine {
 		reportTemplate.DELETE("/slot/:template_id/:slot_name", atLeastLoginMiddleware, reportTemplateController.DeleteReportTemplateSlot)
 		// report
 		report := v1.Group("/report")
-		report.POST("/report",atLeastLoginMiddleware,reportController.CreateReport)
-		report.GET("/report",atLeastLoginMiddleware,reportController.GetReportList)
-		report.GET("/report/:report_id",atLeastLoginMiddleware,reportController.GetReport)
-		report.GET("/slot/:report_id",atLeastLoginMiddleware,reportController.GetReportSlotAnnotateList)
-		report.PUT("/report",atLeastLoginMiddleware,reportController.UpdateReport)
-		report.GET("/report_render/:report_id",atLeastLoginMiddleware,reportController.RenderReport)
-		report.GET("/report_preview/:report_id/:preview_hash",reportController.Preview)
-		report.PUT("/report_finish/:report_id",atLeastLoginMiddleware,reportController.FinishReport)
+		report.POST("/report", atLeastLoginMiddleware, reportController.CreateReport)
+		report.GET("/report", atLeastLoginMiddleware, reportController.GetReportList)
+		report.GET("/report/:report_id", atLeastLoginMiddleware, reportController.GetReport)
+		report.GET("/slot/:report_id", atLeastLoginMiddleware, reportController.GetReportSlotAnnotateList)
+		report.PUT("/report", atLeastLoginMiddleware, reportController.UpdateReport)
+		report.GET("/report_render/:report_id", atLeastLoginMiddleware, reportController.RenderReport)
+		report.GET("/report_preview/:report_id/:preview_hash", reportController.Preview)
+		report.PUT("/report_finish/:report_id", atLeastLoginMiddleware, reportController.FinishReport)
 		// authority message
 		authorityMessage := v1.Group("/authority_message")
 		authorityMessage.POST("/notice_channel", atLeastLoginMiddleware, authorityMessageController.CreateNoticeChannel)
@@ -77,6 +79,10 @@ func NewRouter() *gin.Engine {
 		authorityMessage.GET("/message_send/:message_id/:send_type", atLeastLoginMiddleware, authorityMessageController.AuthorityMessageSend)
 		authorityMessage.PUT("/message_audit/:message_id/:audit_status", atLeastLoginMiddleware, authorityMessageController.AuditAuthorityMessage)
 		authorityMessage.GET("/message_history/:message_id", atLeastLoginMiddleware, authorityMessageController.GetAuthorityMessageSendHistory)
+		// instant chat message
+		instantChatMessage := v1.Group("/instant_chat_message")
+		instantChatMessage.POST("/chat_message", atLeastLoginMiddleware, instantChatMessageController.CreateChatMessage)
+		instantChatMessage.GET("/chat_message", atLeastLoginMiddleware, instantChatMessageController.GetInstantChatMessageList)
 	}
 	return r
 }

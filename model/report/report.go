@@ -2,7 +2,7 @@ package report
 
 import "ssopa/model"
 
-// 报告表
+// Report 报告表
 type Report struct {
 	model.BaseModel
 	ReportId    string `json:"report_id"`                               // 报告id
@@ -25,7 +25,7 @@ func (Report) TableName() string {
 	return "report"
 }
 
-// 作为report的一个副本，只保存内容
+// Replica 作为report的一个副本，只保存内容
 type Replica struct {
 	model.BaseModel
 	ReportId string `json:"report_id"`                             // 报告id

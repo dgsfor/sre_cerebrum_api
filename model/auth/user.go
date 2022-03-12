@@ -8,6 +8,7 @@ import (
 
 type SsoPaUsers struct {
 	model.BaseModel
+	UserId   string `json:"user_id" gorm:"default:null"`                        // 用户id
 	UserName string `json:"user_name" gorm:"type:varchar(20);default:not null"` // 用户名
 	Password string `json:"password" gorm:"default:not null"`                   // 密码
 	Email    string `json:"email" gorm:"default:not null"`                      // 邮箱

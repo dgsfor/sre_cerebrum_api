@@ -8,7 +8,7 @@ import (
 	"ssopa/util"
 )
 
-// login
+// Login login
 func Login(c *gin.Context) {
 	svc := oauth_service.LoginParams{}
 	if err := c.ShouldBind(&svc); err != nil {
@@ -34,7 +34,7 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	err := util.SetLoginCookies(c,svc.UserName,result.Data.(string))
+	err := util.SetLoginCookies(c, svc.UserName, result.Data.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.SsopaResponse{
 			Response: serializer.Response{
@@ -57,7 +57,7 @@ func Login(c *gin.Context) {
 	//c.Redirect(http.StatusFound,conf.GetConfig("SreStabilityOperatingPlatform::FrontendURL").String())
 }
 
-// register
+// Register register
 func Register(c *gin.Context) {
 	svc := oauth_service.RegisterParams{}
 	if err := c.ShouldBind(&svc); err != nil {
@@ -82,7 +82,7 @@ func Register(c *gin.Context) {
 	})
 }
 
-// logout
+// Logout logout
 func Logout(c *gin.Context) {
 	util.Logout(c)
 	c.JSON(http.StatusOK, serializer.SsopaResponse{
@@ -95,9 +95,9 @@ func Logout(c *gin.Context) {
 	})
 }
 
-// get user info
-func GetUserInfo(c *gin.Context)  {
-	u,err := util.GetUserCookie(c)
+// GetUserInfo get user info
+func GetUserInfo(c *gin.Context) {
+	u, err := util.GetUserCookie(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, serializer.SsopaResponse{
 			Response: serializer.Response{
@@ -115,6 +115,20 @@ func GetUserInfo(c *gin.Context)  {
 			Msg:  "get user info success",
 		},
 		ResCode: serializer.ALL_SUCCESS,
+	})
+}
+
+// GetUserList 获取所有用户列表
+func GetUserList(c *gin.Context) {
+	users, _ := util.GetUserCookie(c)
+	result := oauth_service.GetUserList(users)
+	c.JSON(result.Code, serializer.SsopaResponse{
+		Response: serializer.Response{
+			Code: result.Code,
+			Data: result.Data,
+			Msg:  result.Msg,
+		},
+		ResCode: result.ResCode,
 	})
 }
 
